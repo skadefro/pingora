@@ -22,7 +22,7 @@
 
 use arc_swap::ArcSwap;
 use derivative::Derivative;
-use futures::FutureExt;
+use futures::future::FutureExt;
 pub use http::Extensions;
 use pingora_core::protocols::l4::socket::SocketAddr;
 use pingora_error::{ErrorType, OrErr, Result};
@@ -284,16 +284,18 @@ impl Backends {
         if parallel {
             let health_table = self.health.load_full();
             let runtime = current_handle();
-            let jobs = backends.iter().map(|backend| {
+            let jobs: Vec<_> = backends.iter().map(|backend| {
                 let backend = backend.clone();
                 let check = health_check.clone();
                 let ht = health_table.clone();
                 runtime.spawn(async move {
                     check_and_report(&backend, &check, &ht).await;
                 })
-            });
+            }).collect();
 
-            futures::future::join_all(jobs).await;
+            for job in jobs {
+                let _ = job.await;
+            }
         } else {
             for backend in backends.iter() {
                 check_and_report(backend, health_check, &self.health.load()).await;
