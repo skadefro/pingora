@@ -22,7 +22,7 @@
 
 use arc_swap::ArcSwap;
 use derivative::Derivative;
-use futures::future::FutureExt;
+use futures::FutureExt;
 pub use http::Extensions;
 use pingora_core::protocols::l4::socket::SocketAddr;
 use pingora_error::{ErrorType, OrErr, Result};
